@@ -73,15 +73,6 @@ describe('Hacker Stories', () => {
 
       it('orders by points', () => {})
     })
-
-    // Hrm, how would I simulate such errors?
-    // Since I still don't know, the tests are being skipped.
-    // TODO: Find a way to test them out.
-    context.skip('Errors', () => {
-      it('shows "Something went wrong ..." in case of a server error', () => {})
-
-      it('shows "Something went wrong ..." in case of a network error', () => {})
-    })
   })
 
   context('Search', () => {
@@ -126,6 +117,18 @@ describe('Hacker Stories', () => {
         .should('be.visible')
     })
 
+    // Somente para ilustração da alterantiva do submit()
+    it.skip('types and submitis the form directly', () => {
+      cy.get('#search')
+      .type(newTerm)
+
+      cy.get('form').submit();
+
+      cy.wait('@newStories')
+
+      cy.get('.item').should('have.length', 20)
+    })
+
     context('Last searches', () => {
       it('searches via the last searched term', () => {
         cy.get('#search')
@@ -164,5 +167,47 @@ describe('Hacker Stories', () => {
           .should('have.length', 5)
       })
     })
+  })
+})
+
+
+
+    // Hrm, how would I simulate such errors?
+    // Since I still don't know, the tests are being skipped.
+    // TODO: Find a way to test them out.
+context.only('Errors', () => {
+  const errorTerm = "http500"
+  const errorMsg = "Something went wrong ..."
+  beforeEach(() => {
+    cy.visit('/');
+    cy.get('#search')
+      .clear()
+  })
+  it('shows "Something went wrong ..." in case of a server error', () => {
+    cy.intercept(
+      'GET',
+      `search?query=${errorTerm}&page=0`,
+      { statusCode: 500 }
+    ).as('getServerFailure')
+
+    cy.get('#search')
+    .type(`${errorTerm}{enter}`)
+    cy.wait('@getServerFailure')
+
+    cy.contains(errorMsg).should('be.visible')
+  })
+
+  it('shows "Something went wrong ..." in case of a network error', () => {
+    cy.intercept(
+      'GET',
+      `search**`,
+      { forceNetworkError: true}
+    ).as('getNetworkError')
+
+    cy.get('#search')
+    .type(`${errorTerm}{enter}`)
+    cy.wait('@getNetworkError')
+
+    cy.contains(errorMsg).should('be.visible')
   })
 })
